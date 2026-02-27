@@ -167,6 +167,13 @@ if st.button("Search"):
                     ),
                     axis=1
                 )
+                df['navigation_waze'] = df.apply(
+                    lambda row: (
+                        f"https://waze.com/ul?ll={row['latitude']},{row['longitude']}&navigate=yes"
+                        if pd.notna(row['latitude']) and pd.notna(row['longitude']) else None
+                    ),
+                    axis=1
+                )
                 # Calculate distance from central point
                 df['distance_km'] = df.apply(
                     lambda row: calculate_distance(latitude, longitude, row['latitude'], row['longitude']) 
@@ -208,7 +215,11 @@ if st.button("Search"):
                         "navigation": st.column_config.LinkColumn(
                             "Navigation",
                             display_text="Open in Google Maps"
-                        )
+                        ),
+                        "navigation_waze": st.column_config.LinkColumn(
+                            "Navigation (Waze)",
+                            display_text="Open in Waze"
+                        ),
                     },
                 )
 
