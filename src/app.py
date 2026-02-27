@@ -8,6 +8,27 @@ st.image("assets/logo1.png", width='stretch')
 
 st.title("Eevee Charger Search")
 
+# Simple login (credentials in Streamlit Secrets)
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.subheader("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Sign in"):
+        if (
+            username == st.secrets["auth"]["USER"]
+            and password == st.secrets["auth"]["PWD"]
+        ):
+            st.session_state.authenticated = True
+            st.success("Logged in.")
+            st.rerun()
+        else:
+            st.error("Invalid credentials.")
+    st.stop()
+
 # Input fields for central point and distance
 latitude = st.number_input("Latitude", value=49.44)
 longitude = st.number_input("Longitude", value=6.11)
