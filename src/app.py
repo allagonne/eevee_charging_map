@@ -83,6 +83,35 @@ def get_price_display(chargers):
         return f"{min_price:.2f}"
     else:
         return f"{min_price:.2f} < price < {max_price:.2f}"
+    
+def get_address(location):
+    if not isinstance(location, dict):
+        return None
+    
+    street = location.get('street', '')
+    zipcode = location.get('zipcode', '')
+    city = location.get('city', '')
+    country = location.get('country', '')
+    
+    return f"{street}, {zipcode} {city}, {country}"
+
+def get_charger_specs(chargers):
+    if not isinstance(chargers, list) or not chargers:
+        return None
+    
+    # Group by power and connector type
+    specs = {}
+    for c in chargers:
+        power = c.get('power')
+        connector = c.get('connector', {}).get('label')
+        
+        if power and connector:
+            key = f"{power} kW {connector}"
+            specs[key] = specs.get(key, 0) + 1
+    
+    # Format as "n*power kW connector, m*power kW connector..."
+    result = ", ".join([f"{count}*{spec}" for spec, count in specs.items()])
+    return result if result else None
 
 def get_parking_availability(chargers):
     if not isinstance(chargers, list) or not chargers:
@@ -120,6 +149,12 @@ if st.button("Search"):
                 # Extract latitude and longitude from nested location dict
                 df['latitude'] = df['location'].apply(lambda x: x.get('latitude') if isinstance(x, dict) else None)
                 df['longitude'] = df['location'].apply(lambda x: x.get('longitude') if isinstance(x, dict) else None)
+
+                # Add address column
+                df['address'] = df['location'].apply(get_address)
+
+                # Add charger specs column
+                df['chargers_specs'] = df['chargers'].apply(get_charger_specs)
 
                 # Google Maps navigation link
                 df['navigation'] = df.apply(
@@ -161,10 +196,18 @@ if st.button("Search"):
                     df = df.sort_values('price_numeric')
 
                 # drop some columns
-                df.drop(['operator', 'opening_times', 'allowed', 'price_numeric'], axis = 1, inplace=True)
+                df.drop(['chargers', 'location','operator', 'opening_times', 'allowed', 'price_numeric'], axis = 1, inplace=True)
                 
-                # Display data
-                st.dataframe(df)
+                # Display data (with clickable navigation links)
+                st.dataframe(
+                    df,
+                    column_config={
+                        "navigation": st.column_config.LinkColumn(
+                            "Navigation",
+                            display_text="Open in Google Maps"
+                        )
+                    },
+                )
 
                 # Display map
                 st.map(df)
