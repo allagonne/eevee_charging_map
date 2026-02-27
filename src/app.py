@@ -3,6 +3,9 @@ import pandas as pd
 from api import get_chargers, get_charger_details
 import math
 
+# Force light theme
+st.set_page_config(page_title="Eevee Charger Search", layout="wide", initial_sidebar_state="collapsed")
+
 # Display logo
 st.image("assets/logo1.png", width='stretch')
 
