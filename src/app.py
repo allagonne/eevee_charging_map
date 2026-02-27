@@ -121,6 +121,14 @@ if st.button("Search"):
                 df['latitude'] = df['location'].apply(lambda x: x.get('latitude') if isinstance(x, dict) else None)
                 df['longitude'] = df['location'].apply(lambda x: x.get('longitude') if isinstance(x, dict) else None)
 
+                # Google Maps navigation link
+                df['navigation'] = df.apply(
+                    lambda row: (
+                        f"https://www.google.com/maps/dir/?api=1&destination={row['latitude']},{row['longitude']}"
+                        if pd.notna(row['latitude']) and pd.notna(row['longitude']) else None
+                    ),
+                    axis=1
+                )
                 # Calculate distance from central point
                 df['distance_km'] = df.apply(
                     lambda row: calculate_distance(latitude, longitude, row['latitude'], row['longitude']) 
