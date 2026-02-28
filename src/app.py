@@ -38,25 +38,35 @@ if not st.session_state.authenticated:
 if "geo" not in st.session_state:
     st.session_state.geo = None
 
-col1, col2 = st.columns(2)
+if "request_location" not in st.session_state:
+    st.session_state.request_location = False
 
+col1, col2 = st.columns(2)
 
 with col1:
     if st.button("📍 Get my location"):
-        # This calls browser geolocation. If permission denied, returns None.
-        loc = get_geolocation()
-        if loc and "coords" in loc:
-            st.session_state.geo = {
-                "lat": loc["coords"]["latitude"],
-                "lon": loc["coords"]["longitude"],
-                "accuracy_m": loc["coords"].get("accuracy"),
-            }
-        else:
-            st.warning("Could not get your location. Please allow location access in your browser settings and try again.")
+        st.session_state.request_location = True
 
 with col2:
     if st.button("❌ Clear"):
         st.session_state.geo = None
+        st.session_state.request_location = False
+
+# Call get_geolocation outside of button callback for proper handling
+if st.session_state.request_location:
+    loc = get_geolocation()
+    if loc and "coords" in loc:
+        st.session_state.geo = {
+            "lat": loc["coords"]["latitude"],
+            "lon": loc["coords"]["longitude"],
+            "accuracy_m": loc["coords"].get("accuracy"),
+        }
+        st.session_state.request_location = False
+        st.rerun()
+    elif loc is not None:
+        # Location request was denied or failed
+        st.warning("Could not get your location. Please allow location access in your browser settings and try again.")
+        st.session_state.request_location = False
 
 # ---- Show and use latitude/longitude ----
 geo = st.session_state.geo
