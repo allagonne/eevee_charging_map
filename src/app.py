@@ -3,13 +3,15 @@ import pandas as pd
 from api import get_chargers, get_charger_details
 import math
 
+from streamlit_js_eval import get_geolocation
+
 # Force light theme
 st.set_page_config(page_title="Eevee Charger Search", layout="wide", initial_sidebar_state="collapsed")
 
 # Display logo
-st.image("assets/logo1.png", width='stretch')
+st.image("assets/logo1.png", width=200)
 
-st.title("Eevee Charger Search")
+st.title("Eevee Charger Search App")
 
 # Simple login (credentials in Streamlit Secrets)
 if "authenticated" not in st.session_state:
@@ -32,10 +34,44 @@ if not st.session_state.authenticated:
             st.error("Invalid credentials.")
     st.stop()
 
+# ---- Location button ----
+if "geo" not in st.session_state:
+    st.session_state.geo = None
+
+col1, col2 = st.columns(2)
+
+
+with col1:
+    if st.button("📍 Get my location"):
+        # This calls browser geolocation. If permission denied, returns None.
+        loc = get_geolocation()
+        if loc and "coords" in loc:
+            st.session_state.geo = {
+                "lat": loc["coords"]["latitude"],
+                "lon": loc["coords"]["longitude"],
+                "accuracy_m": loc["coords"].get("accuracy"),
+            }
+        else:
+            st.warning("Could not get your location. Please allow location access in your browser settings and try again.")
+
+with col2:
+    if st.button("❌ Clear"):
+        st.session_state.geo = None
+
+# ---- Show and use latitude/longitude ----
+geo = st.session_state.geo
+default_lat, default_lon, default_dist = 49.44, 6.11, 1.0
+if geo:
+    st.success(f"Latitude: {geo['lat']:.6f}, Longitude: {geo['lon']:.6f} (±{geo.get('accuracy_m', '–')} m)")
+    lat, lon = geo['lat'], geo['lon']
+else:
+    lat, lon = default_lat, default_lon
+
+
 # Input fields for central point and distance
-latitude = st.number_input("Latitude", value=49.44)
-longitude = st.number_input("Longitude", value=6.11)
-distance_km = st.number_input("Distance (km)", value=1.0)
+latitude = st.number_input("Latitude", value=lat)
+longitude = st.number_input("Longitude", value=lon)
+distance_km = st.number_input("Distance (km)", value=default_dist)
 
 def get_bounding_box(latitude, longitude, distance_km):
     """
