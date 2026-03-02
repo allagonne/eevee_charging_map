@@ -81,7 +81,7 @@ else:
 # Input fields for central point and distance
 latitude = st.number_input("Latitude", value=lat)
 longitude = st.number_input("Longitude", value=lon)
-distance_km = st.number_input("Distance (km)", value=default_dist)
+distance_km = st.number_input("Distance (km)", value=default_dist, min_value=1, max_value=10, step=0.5)
 
 def get_bounding_box(latitude, longitude, distance_km):
     """
