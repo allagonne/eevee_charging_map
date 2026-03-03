@@ -21,3 +21,7 @@ The login/passwords are shared to users asking for it. Send a demand to allagonn
 # Geolocation
 
 The geolocation feature requires the user to allow location search from your laptop or phone.
+
+# Screenshot
+
+![Screenshot of the app](assets/screenshot.png)
