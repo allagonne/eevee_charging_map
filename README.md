@@ -2,8 +2,12 @@
 
 This app is made to search for the charging stations around you or around a specific location.
 The visible charging stations are within the EEVEE network only.
-The user can search in a maximum distance of 10 km (otherwise, the app would take to much time to search)
+The user can search in a maximum distance of 10 km (otherwise, the app would take too much time to search)
 The user can search by distance or by price, and see the technology, the availability and power of the charging stations.
+
+# Run locally
+
+'''streamlit run src/app.py'''
 
 # Deployment
 
