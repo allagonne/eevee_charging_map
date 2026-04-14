@@ -82,6 +82,7 @@ else:
 latitude = st.number_input("Latitude", value=lat)
 longitude = st.number_input("Longitude", value=lon)
 distance_km = st.number_input("Distance (km)", value=default_dist, min_value=1.0, max_value=10.0, step=0.5)
+only_fast_charge = st.checkbox("⚡ Only fast charge (≥100 kW)", value=False)
 
 def get_bounding_box(latitude, longitude, distance_km):
     """
@@ -144,6 +145,12 @@ def get_address(location):
     
     return f"{street}, {zipcode} {city}, {country}"
 
+def highlight_unavailable(row):
+    """Apply light red background if no stations are available"""
+    if pd.notna(row['parking_spaces']) and row['parking_spaces'].startswith('0/'):
+        return ['background-color: #ffcccc'] * len(row)  # Light red
+    return [''] * len(row)
+
 def get_charger_specs(chargers):
     if not isinstance(chargers, list) or not chargers:
         return None
@@ -171,6 +178,13 @@ def get_parking_availability(chargers):
     
     return f"{available}/{total}"
 
+def has_fast_charging(chargers, min_power=100):
+    """Check if any charger has power >= min_power kW"""
+    if not isinstance(chargers, list) or not chargers:
+        return False
+    
+    return any(c.get('power', 0) >= min_power for c in chargers)
+
 if st.button("Search"):
     with st.spinner("Searching for chargers..."):
         try:
@@ -186,7 +200,7 @@ if st.button("Search"):
             if not chargers:
                 st.warning("No chargers found in the specified area.")
             else:
-                st.success(f"{len(chargers)} chargers found!")
+                st.success(f"{len(chargers)} chargers found! Fetching details and filtering out...")
 
                 detailed_chargers = []
                 for charger in chargers:
@@ -237,7 +251,14 @@ if st.button("Search"):
                     
                     # Update parking_spaces to show availability
                     df['parking_spaces'] = df['chargers'].apply(get_parking_availability)
-
+                    
+                    # Filter for fast charging if checkbox is selected
+                    if only_fast_charge:
+                        df = df[df['chargers'].apply(has_fast_charging)]
+                        if df.empty:
+                            st.warning("No fast chargers (≥100 kW) found within the specified distance.")
+                            st.stop()
+                            
                     # For sorting, extract min price as numeric value
                     df['price_numeric'] = df['chargers'].apply(
                         lambda x: min([c.get('tariff', {}).get('energy_price', float('inf')) for c in x]) if isinstance(x, list) and x else None
@@ -254,9 +275,12 @@ if st.button("Search"):
                 # drop some columns
                 df.drop(['chargers', 'location','operator', 'opening_times', 'allowed', 'price_numeric'], axis = 1, inplace=True)
                 
-                # Display data (with clickable navigation links)
+                # Apply the styling before displaying
+                styled_df = df.style.apply(highlight_unavailable, axis=1)
+
+                # Display the styled dataframe
                 st.dataframe(
-                    df,
+                    styled_df,
                     column_config={
                         "navigation": st.column_config.LinkColumn(
                             "Navigation",
