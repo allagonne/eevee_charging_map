@@ -205,8 +205,21 @@ if st.button("Search"):
                 detailed_chargers = []
                 for charger in chargers:
                     details = get_charger_details(charger['id'])
+                    
+                    # If only fast charge is selected, skip chargers without fast charging
+                    if only_fast_charge:
+                        if not has_fast_charging(details.get('chargers', []), min_power=100):
+                            continue  # Skip this charger, don't add to list
+                    
                     detailed_chargers.append(details)
 
+                # Check if we have any chargers after filtering
+                if not detailed_chargers:
+                    st.warning("No chargers match your criteria.")
+                    st.stop()
+                
+                st.success(f"{len(detailed_chargers)} chargers match your criteria!")
+                
                 df = pd.DataFrame(detailed_chargers)
                 
                 # Extract latitude and longitude from nested location dict
@@ -252,13 +265,6 @@ if st.button("Search"):
                     # Update parking_spaces to show availability
                     df['parking_spaces'] = df['chargers'].apply(get_parking_availability)
                     
-                    # Filter for fast charging if checkbox is selected
-                    if only_fast_charge:
-                        df = df[df['chargers'].apply(has_fast_charging)]
-                        if df.empty:
-                            st.warning("No fast chargers (≥100 kW) found within the specified distance.")
-                            st.stop()
-                            
                     # For sorting, extract min price as numeric value
                     df['price_numeric'] = df['chargers'].apply(
                         lambda x: min([c.get('tariff', {}).get('energy_price', float('inf')) for c in x]) if isinstance(x, list) and x else None
